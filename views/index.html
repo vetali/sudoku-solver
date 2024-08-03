@@ -1,0 +1,51 @@
+{{ block "index" .}}
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>Sudoku Solver</title>
+        <link rel="stylesheet" href="/css/main.css">
+    </head>
+    <body>
+    {{template "sudokuGrid" .Grid}}
+
+    </body>
+    <footer>
+        <script src="https://unpkg.com/htmx.org@2.0.1"
+                integrity="sha384-QWGpdj554B4ETpJJC9z+ZHJcA/i59TyjxEPXiiUgN2WmTyV5OEZWCD6gQhgkdpB/"
+                crossorigin="anonymous"></script>
+        <script>
+            document.body.addEventListener('htmx:beforeSwap', function (event) {
+                if (event.detail.xhr.status === 422) {
+                    event.detail.shouldSwap = true;
+                    event.detail.isError = false;
+                }
+            });
+        </script>
+    </footer>
+    </html>
+{{ end }}
+
+
+{{block "sudokuGrid" . }}
+    <form  class="sudoku-grid-wrapper sudoku-box">
+        {{ range . }}
+            <div class="sudoku-cell">
+                <input
+                        hx-post="/solve"
+                        hx-trigger="keyup changed delay:500ms"
+                        type="text" value="" name="cell-1"/>
+                <span class="hints"></span>
+            </div>
+            <div class="sudoku-cell">
+                <input
+                        hx-post="/solve"
+                        hx-trigger="keyup changed delay:500ms"
+                        type="text" value="" name="cell-2"/>
+                <span class="hints"></span>
+            </div>
+
+        {{end}}
+    </form>
+{{end}}
