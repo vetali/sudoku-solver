@@ -6,6 +6,7 @@ import (
 	"github.com/labstack/echo/v4/middleware"
 	"html/template"
 	"io"
+	"strconv"
 )
 
 type Templates struct {
@@ -22,14 +23,31 @@ func newTemplate() *Templates {
 	}
 }
 
+type CellData struct {
+	Value   int
+	Options []int
+}
+
+func NewCellData() CellData {
+	return CellData{0, make([]int, 0)}
+}
+
+func NewGrid() map[int]CellData {
+	var grid = make(map[int]CellData)
+	for i := 0; i < 81; i++ {
+		grid[i] = NewCellData()
+	}
+	return grid
+}
+
 type Page struct {
-	Grid  []int
+	Grid  map[int]CellData
 	Level string
 }
 
 func newPage() Page {
 	return Page{
-		Grid:  make([]int, 81),
+		Grid:  NewGrid(),
 		Level: "Easy",
 	}
 }
@@ -45,8 +63,20 @@ func main() {
 		return c.Render(200, "index", page)
 	})
 	e.POST("/solve", func(c echo.Context) error {
-		cell1Val := c.Param("cell-1")
-		fmt.Printf("Cell submitted %v", cell1Val)
+		var cellValues = make([]int, 81)
+		values, _ := c.FormParams()
+
+		for i := 0; i < 81; i++ {
+			cellInputName := fmt.Sprintf("cell_%d", i)
+			fmt.Printf("Checking for form value: %+v\n", values[cellInputName])
+
+			if intVal, err := strconv.Atoi(values[cellInputName][0]); err != nil {
+				cellValues[i] = intVal
+			} else {
+				fmt.Printf(err.Error())
+			}
+		}
+		fmt.Printf("Cell submitted %+v", cellValues)
 		return c.Render(200, "index", page)
 	})
 	e.POST("/contacts", func(c echo.Context) error {

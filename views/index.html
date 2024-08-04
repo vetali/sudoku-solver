@@ -30,22 +30,14 @@
 
 {{block "sudokuGrid" . }}
     <form  class="sudoku-grid-wrapper sudoku-box">
-        {{ range . }}
+        {{ range $key, $val := . }}
             <div class="sudoku-cell">
                 <input
                         hx-post="/solve"
                         hx-trigger="keyup changed delay:500ms"
-                        type="text" value="" name="cell-1"/>
+                        type="text" value="" name="cell_{{$key}}"/>
                 <span class="hints"></span>
             </div>
-            <div class="sudoku-cell">
-                <input
-                        hx-post="/solve"
-                        hx-trigger="keyup changed delay:500ms"
-                        type="text" value="" name="cell-2"/>
-                <span class="hints"></span>
-            </div>
-
         {{end}}
     </form>
 {{end}}
