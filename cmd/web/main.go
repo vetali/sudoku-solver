@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
+	"github.com/vetali/sudoku/pkg"
 	"html/template"
 	"io"
 	"strconv"
@@ -43,12 +44,14 @@ func NewGrid() map[int]CellData {
 type Page struct {
 	Grid  map[int]CellData
 	Level string
+	Valid string
 }
 
 func newPage() Page {
 	return Page{
 		Grid:  NewGrid(),
-		Level: "Easy",
+		Level: "Multiple Solutions",
+		Valid: "Valid",
 	}
 }
 
@@ -58,26 +61,35 @@ func main() {
 	e.Renderer = newTemplate()
 	e.Static("/images", "assets/images")
 	e.Static("/css", "assets/css")
-	page := newPage()
+
 	e.GET("/", func(c echo.Context) error {
+		page := newPage()
 		return c.Render(200, "index", page)
 	})
-	e.POST("/solve", func(c echo.Context) error {
-		var cellValues = make([]int, 81)
-		values, _ := c.FormParams()
 
-		for i := 0; i < 81; i++ {
-			cellInputName := fmt.Sprintf("cell_%d", i)
-			fmt.Printf("Checking for form value: %+v\n", values[cellInputName])
+	e.POST("/update", func(c echo.Context) error {
+		page := newPage()
+		cellValues := CellValuesFromForm(c)
+		//fmt.Printf("Cell values: %+v", cellValues)
+		sudoku := pkg.NewSudoku(cellValues)
+		sudoku.UpdateOptions()
 
-			if intVal, err := strconv.Atoi(values[cellInputName][0]); err != nil {
-				cellValues[i] = intVal
-			} else {
-				fmt.Printf(err.Error())
+		for i, cell := range page.Grid {
+			//fmt.Printf("Cell value at idx: %v is %v\n", i, sudoku.GetCellValue(i))
+			cell.Value = sudoku.GetCellValue(i)
+			for o := range sudoku.GetCellOptions(i) {
+				cell.Options = append(cell.Options, o)
 			}
+			page.Grid[i] = cell
 		}
-		fmt.Printf("Cell submitted %+v", cellValues)
-		return c.Render(200, "index", page)
+		page.Level = sudoku.Level
+		if sudoku.IsValid() {
+			page.Valid = "Valid"
+		} else {
+			page.Valid = "Invalid"
+		}
+
+		return c.Render(200, "sudokuGrid", page)
 	})
 	e.POST("/contacts", func(c echo.Context) error {
 		//name := c.FormValue("name")
@@ -115,4 +127,18 @@ func main() {
 	})
 
 	e.Logger.Fatal(e.Start(":42069"))
+}
+
+func CellValuesFromForm(c echo.Context) [81]int {
+	var cellValues = make([]int, 81)
+	values, _ := c.FormParams()
+
+	for i := 0; i < 81; i++ {
+		cellInputName := fmt.Sprintf("cell_%d", i)
+		if intVal, err := strconv.Atoi(values[cellInputName][0]); err == nil {
+			cellValues[i] = intVal
+		}
+	}
+
+	return [81]int(cellValues)
 }

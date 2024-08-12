@@ -94,12 +94,16 @@ func (s *Sudoku) validateGroup(cellsGroup [9]int) error {
 			} else {
 				seen[val] = struct{}{}
 			}
+		} else {
+			if len(s.options[idx]) == 0 {
+				return errors.New(fmt.Sprintf("Cell %d has no value and no valid options", idx))
+			}
 		}
 	}
 	return nil
 }
 
-func (s *Sudoku) updateOptions() int {
+func (s *Sudoku) UpdateOptions() int {
 	changes := 0
 	for i, _ := range s.options {
 		if s.cells[i] > 0 {
@@ -111,28 +115,29 @@ func (s *Sudoku) updateOptions() int {
 				delete(s.options[r], s.cells[i])
 			}
 		} else {
-			//Naked Singles: set the value if only one option present
-			if len(s.options[i]) == 1 {
-				var key int
-				for k, _ := range s.options[i] {
-					key = k
-					break
-				}
-				s.cells[i] = key
-				s.options[i] = make(OptionSet)
-				changes += 1
-			} else {
-				//collect all set values from related cells
-				for _, r := range s.related[i] {
-					if s.cells[r] > 0 {
-						_, ok := s.options[i][s.cells[r]]
-						if ok {
-							changes += 1
-						}
-						delete(s.options[i], s.cells[r])
+			//collect all set values from related cells
+			for _, r := range s.related[i] {
+				if s.cells[r] > 0 {
+					_, ok := s.options[i][s.cells[r]]
+					if ok {
+						changes += 1
 					}
+					delete(s.options[i], s.cells[r])
 				}
 			}
+			//Naked Singles: set the value if only one option present
+			//if len(s.options[i]) == 1 {
+			//	var key int
+			//	for k, _ := range s.options[i] {
+			//		key = k
+			//		break
+			//	}
+			//	s.cells[i] = key
+			//	s.options[i] = make(OptionSet)
+			//	changes += 1
+			//} else {
+			//
+			//}
 		}
 	}
 
@@ -177,13 +182,21 @@ func (s *Sudoku) Solve(debug bool) error {
 		if err := s.Validate(); err != nil {
 			return errors.New(fmt.Sprintf("invalid sudoku: %v", err))
 		}
-		changes = s.updateOptions()
+		changes = s.UpdateOptions()
 		if debug == true {
 			s.Print()
 		}
 	}
 
 	return nil
+}
+
+func (s *Sudoku) GetCellValue(cellIdx int) int {
+	return s.cells[cellIdx]
+}
+
+func (s *Sudoku) GetCellOptions(cellIdx int) OptionSet {
+	return s.options[cellIdx]
 }
 
 func NewSudoku(initialValues [81]int) *Sudoku {

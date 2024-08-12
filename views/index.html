@@ -8,7 +8,7 @@
         <link rel="stylesheet" href="/css/main.css">
     </head>
     <body>
-    {{template "sudokuGrid" .Grid}}
+    {{template "sudokuGrid" .}}
 
     </body>
     <footer>
@@ -29,15 +29,25 @@
 
 
 {{block "sudokuGrid" . }}
-    <form  class="sudoku-grid-wrapper sudoku-box">
-        {{ range $key, $val := . }}
+    <form  id="sudoku_form" >
+        <h2>Level: {{.Level}}  Status: {{.Valid}}</h2>
+        <div class="sudoku-grid-wrapper sudoku-box">
+            {{ range $key, $val := .Grid }}
             <div class="sudoku-cell">
                 <input
-                        hx-post="/solve"
-                        hx-trigger="keyup changed delay:500ms"
-                        type="text" value="" name="cell_{{$key}}"/>
-                <span class="hints"></span>
+                        hx-post="/update"
+                        hx-target="#sudoku_form"
+                        hx-swap="outerHTML"
+                        hx-trigger="keyup changed delay:200ms"
+                        type="text" value="{{ if eq $val.Value  0 }}{{else}}{{$val.Value}}{{end}}" name="cell_{{ $key }}"/>
+                <span class="hints">
+                    {{ range $opt := $val.Options}}
+                        {{$opt}}
+                    {{end}}
+                </span>
             </div>
-        {{end}}
+            {{end}}
+        </div>
+
     </form>
 {{end}}
